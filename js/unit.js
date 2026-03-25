@@ -1,5 +1,5 @@
 /**
- * 红色警戒：共和国之辉 - 单位系统
+ * 红色警戒：共和国之辉 - 单位系统 v2.0
  */
 
 class Unit {
@@ -16,11 +16,14 @@ class Unit {
         this.name = config.name;
         this.maxHealth = config.health;
         this.health = config.health;
-        this.speed = config.speed;
+        
+        // 采矿车速度提升
+        this.speed = config.canHarvest ? CONFIG.HARVESTER.SPEED : config.speed;
+        
         this.damage = config.damage || 0;
         this.range = config.range || 0;
         this.icon = config.icon;
-        this.unitType = config.type; // 'infantry' or 'vehicle'
+        this.unitType = config.type;
         
         // 移动
         this.targetX = x;
@@ -33,11 +36,11 @@ class Unit {
         this.targetUnit = null;
         this.targetBuilding = null;
         this.attackCooldown = 0;
-        this.attackCooldownMax = 1; // 秒
+        this.attackCooldownMax = 1;
         
         // 升级系统
-        this.battleLevel = 0; // 战斗等级 0-3
-        this.spyLevel = 0; // 间谍窃取等级 0-1
+        this.battleLevel = 0;
+        this.spyLevel = 0;
         this.xp = 0;
         
         // 特殊能力
@@ -45,14 +48,17 @@ class Unit {
         this.disguisedAs = null;
         this.isCamouflaged = false;
         
-        // 状态
-        this.selected = false;
+        // 采矿
         this.isHarvesting = false;
         this.oreCarried = 0;
         this.harvestTarget = null;
+        this.autoSearchOre = config.canHarvest && CONFIG.HARVESTER.AUTO_SEARCH;
+        
+        // 状态
+        this.selected = false;
         
         // 动画
-        this.facing = 0; // 朝向角度
+        this.facing = 0;
         this.animFrame = 0;
     }
     
@@ -77,11 +83,13 @@ class Unit {
         
         // 采矿
         if (this.config.canHarvest && this.isHarvesting) {
-            this.updateHarvesting(deltaTime, gameMap, allyBuildings);
+            return this.updateHarvesting(deltaTime, gameMap, allyBuildings);
         }
         
-        // 更新动画
+        // 动画
         this.animFrame += deltaTime * 10;
+        
+        return null;
     }
     
     /**
@@ -109,14 +117,13 @@ class Unit {
             return;
         }
         
-        // 计算移动速度（根据等级提升）
+        // 计算移动速度
         const levelMultiplier = 1 + this.battleLevel * 0.1;
         const moveSpeed = this.speed * levelMultiplier * deltaTime;
         
         this.x += (dx / dist) * moveSpeed;
         this.y += (dy / dist) * moveSpeed;
         
-        // 更新朝向
         this.facing = Math.atan2(dy, dx);
     }
     
@@ -170,7 +177,6 @@ class Unit {
      * 执行攻击
      */
     attack(target) {
-        // 计算伤害（根据等级提升）
         const levelMultiplier = 1 + this.battleLevel * 0.2;
         const totalDamage = this.damage * levelMultiplier;
         
@@ -197,6 +203,10 @@ class Unit {
                     // 卸载矿石
                     const deposit = this.oreCarried;
                     this.oreCarried = 0;
+                    
+                    // 自动寻找下一个矿点
+                    this.autoSearchOre = true;
+                    
                     return { type: 'oreDeposited', amount: deposit };
                 } else {
                     this.moveTo(center.x, center.y);
@@ -329,7 +339,7 @@ class Unit {
     canBeDetectedByDog(dog) {
         if (!this.isDisguised) return false;
         const dist = Utils.distance(this.x, this.y, dog.x, dog.y);
-        return dist <= 3; // 狗在3格内可以发现间谍
+        return dist <= 3;
     }
     
     /**
@@ -384,7 +394,8 @@ class Unit {
             spyLevel: this.spyLevel,
             xp: this.xp,
             isDisguised: this.isDisguised,
-            oreCarried: this.oreCarried
+            oreCarried: this.oreCarried,
+            autoSearchOre: this.autoSearchOre
         };
     }
     
@@ -400,6 +411,7 @@ class Unit {
         unit.xp = data.xp || 0;
         unit.isDisguised = data.isDisguised || false;
         unit.oreCarried = data.oreCarried || 0;
+        unit.autoSearchOre = data.autoSearchOre !== false;
         return unit;
     }
 }

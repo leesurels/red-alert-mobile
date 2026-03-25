@@ -1,5 +1,5 @@
 /**
- * 红色警戒：共和国之辉 - 游戏主逻辑
+ * 红色警戒：共和国之辉 - 游戏主逻辑 v2.0
  */
 
 class Game {
@@ -25,6 +25,7 @@ class Game {
         
         // 相机
         this.camera = { x: 0, y: 0 };
+        this.zoom = 1;
         
         // 选中
         this.selectedUnits = [];
@@ -40,12 +41,26 @@ class Game {
         
         // AI
         this.aiPlayers = [];
+        
+        // 设置
+        this.settings = {
+            soundVolume: 50,
+            musicVolume: 50,
+            language: 'zh'
+        };
+        
+        // 遭遇战配置
+        this.skirmishConfig = {
+            mapType: 'GRASSLAND',
+            enemyCount: 1,
+            difficulty: 'normal'
+        };
     }
     
     /**
      * 初始化游戏
      */
-    init(faction = 'soviet') {
+    init(faction = 'soviet', isSkirmish = false) {
         this.playerFaction = faction;
         
         // 创建地图
@@ -70,7 +85,11 @@ class Game {
         this.camera.y = spawnPoint.y * CONFIG.MAP.TILE_SIZE - this.canvas.height / 2;
         
         // 创建AI
-        this.createAI();
+        if (isSkirmish) {
+            this.createMultipleAI();
+        } else {
+            this.createAI();
+        }
         
         // 更新UI
         this.updateUI();
@@ -79,6 +98,24 @@ class Game {
         this.isRunning = true;
         this.lastTime = performance.now();
         requestAnimationFrame(this.gameLoop.bind(this));
+    }
+    
+    /**
+     * 创建多个AI敌人（遭遇战模式）
+     */
+    createMultipleAI() {
+        const count = this.skirmishConfig.enemyCount;
+        const factions = ['soviet', 'allied'];
+        
+        for (let i = 0; i < count; i++) {
+            const aiFaction = factions[i % 2];
+            const ai = new GameAI(`ai${i + 1}`, aiFaction, this);
+            this.aiPlayers.push(ai);
+            
+            // AI出生点
+            const aiSpawn = this.map.getRandomSpawnPoint();
+            ai.init(aiSpawn.x, aiSpawn.y);
+        }
     }
     
     /**
@@ -124,23 +161,11 @@ class Game {
             this.units.push(soldier);
         }
         
-        // 采矿车
+        // 采矿车（自动寻矿）
         const harvester = new Unit('harvester', x - 2, y + 5, this.playerFaction, this.playerId);
         harvester.isHarvesting = true;
+        harvester.autoSearchOre = true;
         this.units.push(harvester);
-    }
-    
-    /**
-     * 创建AI
-     */
-    createAI() {
-        const aiFaction = this.playerFaction === 'soviet' ? 'allied' : 'soviet';
-        const ai = new GameAI('ai1', aiFaction, this);
-        this.aiPlayers.push(ai);
-        
-        // AI出生点
-        const aiSpawn = this.map.getRandomSpawnPoint();
-        ai.init(aiSpawn.x, aiSpawn.y);
     }
     
     /**
@@ -194,6 +219,11 @@ class Game {
             if (result && result.type === 'oreDeposited') {
                 this.economy.earn(result.amount * CONFIG.ECONOMY.ORE_VALUE);
             }
+            
+            // 采矿车自动寻矿
+            if (unit.config.canHarvest && unit.autoSearchOre && !unit.isHarvesting && unit.oreCarried === 0) {
+                this.autoSearchOreForHarvester(unit);
+            }
         }
         
         // 移除死亡单位
@@ -220,10 +250,52 @@ class Game {
     }
     
     /**
+     * 采矿车自动寻矿
+     */
+    autoSearchOreForHarvester(harvester) {
+        const ore = this.map.getNearestOre(harvester.x, harvester.y, 50);
+        if (ore) {
+            const centerX = ore.x + ore.size / 2;
+            const centerY = ore.y + ore.size / 2;
+            harvester.moveTo(centerX, centerY, this.map);
+            harvester.isHarvesting = true;
+        }
+    }
+    
+    /**
      * 渲染
      */
     render() {
         this.renderer.render();
+    }
+    
+    /**
+     * 检查是否可以建造
+     */
+    canBuildAt(buildingType, x, y) {
+        const config = CONFIG.BUILDINGS[buildingType];
+        if (!config) return false;
+        
+        // 检查是否与现有建筑重叠
+        for (const building of this.buildings) {
+            if (this.buildingsOverlap(x, y, config.size.w, config.size.h, building)) {
+                return false;
+            }
+        }
+        
+        // 检查建造条件
+        return this.map.canBuild(x, y, config.size.w, config.size.h, 
+            this.buildings.filter(b => b.playerId === this.playerId));
+    }
+    
+    /**
+     * 检查建筑是否重叠
+     */
+    buildingsOverlap(x1, y1, w1, h1, building) {
+        return !(x1 + w1 <= building.x || 
+                 x1 >= building.x + building.width || 
+                 y1 + h1 <= building.y || 
+                 y1 >= building.y + building.height);
     }
     
     /**
@@ -234,20 +306,19 @@ class Game {
         
         // 检查资金
         if (!this.economy.canAfford(config.cost)) {
-            alert('资金不足！');
+            this.showToast('资金不足！');
             return false;
         }
         
         // 检查电力
         if (config.power < 0 && this.economy.power + config.power < 0) {
-            alert('电力不足！');
+            this.showToast('电力不足！');
             return false;
         }
         
-        // 检查建造位置
-        const playerBuildings = this.buildings.filter(b => b.playerId === this.playerId);
-        if (!this.map.canBuild(x, y, config.size.w, config.size.h, playerBuildings)) {
-            alert('无法在此位置建造！');
+        // 检查建造位置（包括重叠检查）
+        if (!this.canBuildAt(buildingType, x, y)) {
+            this.showToast('无法在此位置建造！');
             return false;
         }
         
@@ -258,6 +329,7 @@ class Game {
         const building = new Building(buildingType, x, y, this.playerFaction, this.playerId);
         this.buildings.push(building);
         
+        this.showToast(`开始建造 ${config.name}`);
         return true;
     }
     
@@ -283,6 +355,35 @@ class Game {
         const gridX = Math.floor(worldX / CONFIG.MAP.TILE_SIZE);
         const gridY = Math.floor(worldY / CONFIG.MAP.TILE_SIZE);
         
+        // 如果有选中的可移动单位，点击地面移动
+        if (this.selectedUnits.length > 0 && this.selectedUnits.every(u => u.config.type === 'infantry' || u.config.type === 'vehicle')) {
+            // 检查是否点击了敌人
+            let clickedEnemy = false;
+            
+            for (const unit of this.units) {
+                if (unit.containsPoint(gridX, gridY) && unit.playerId !== this.playerId) {
+                    this.orderAttack(gridX, gridY);
+                    clickedEnemy = true;
+                    break;
+                }
+            }
+            
+            for (const building of this.buildings) {
+                if (building.containsPoint(gridX, gridY) && building.playerId !== this.playerId) {
+                    this.orderAttack(gridX, gridY);
+                    clickedEnemy = true;
+                    break;
+                }
+            }
+            
+            if (!clickedEnemy) {
+                // 移动到点击位置
+                this.orderMove(gridX, gridY);
+                this.showMoveIndicator(worldX, worldY);
+            }
+            return;
+        }
+        
         // 清除选中
         this.clearSelection();
         
@@ -304,26 +405,113 @@ class Game {
     }
     
     /**
-     * 处理双击
+     * 显示移动指示器
      */
-    handleDoubleClick(worldX, worldY) {
+    showMoveIndicator(worldX, worldY) {
+        const indicator = document.createElement('div');
+        indicator.className = 'move-command-indicator';
+        indicator.style.left = (worldX * this.zoom - this.camera.x * this.zoom) + 'px';
+        indicator.style.top = (worldY * this.zoom - this.camera.y * this.zoom) + 'px';
+        document.getElementById('ui-layer').appendChild(indicator);
+        
+        setTimeout(() => indicator.remove(), 500);
+    }
+    
+    /**
+     * 命令移动
+     */
+    orderMove(targetX, targetY) {
+        for (const unit of this.selectedUnits) {
+            unit.moveTo(targetX, targetY, this.map);
+        }
+    }
+    
+    /**
+     * 命令攻击
+     */
+    orderAttack(gridX, gridY) {
+        // 寻找目标
+        let target = null;
+        
+        // 检查建筑
+        for (const building of this.buildings) {
+            if (building.containsPoint(gridX, gridY) && building.playerId !== this.playerId) {
+                target = building;
+                break;
+            }
+        }
+        
+        // 检查单位
+        if (!target) {
+            for (const unit of this.units) {
+                if (unit.containsPoint(gridX, gridY) && unit.playerId !== this.playerId) {
+                    target = unit;
+                    break;
+                }
+            }
+        }
+        
+        // 命令攻击
+        if (target) {
+            for (const unit of this.selectedUnits) {
+                if (unit.damage > 0) {
+                    unit.attackTarget(target);
+                }
+            }
+        } else {
+            // 如果没有目标，移动
+            this.orderMove(gridX, gridY);
+        }
+    }
+    
+    /**
+     * 命令维修
+     */
+    orderRepair(worldX, worldY) {
         const gridX = Math.floor(worldX / CONFIG.MAP.TILE_SIZE);
         const gridY = Math.floor(worldY / CONFIG.MAP.TILE_SIZE);
         
-        // 选中同类型的所有单位
-        const clickedUnit = this.units.find(u => u.containsPoint(gridX, gridY));
-        if (clickedUnit && clickedUnit.playerId === this.playerId) {
-            const sameType = this.units.filter(u => 
-                u.type === clickedUnit.type && 
-                u.playerId === this.playerId &&
-                Utils.distance(u.x, u.y, clickedUnit.x, clickedUnit.y) < 10
-            );
-            
-            this.clearSelection();
-            for (const unit of sameType) {
-                this.selectUnit(unit, false);
+        for (const building of this.buildings) {
+            if (building.containsPoint(gridX, gridY) && 
+                building.playerId === this.playerId && 
+                building.config.canRepair &&
+                building.health < building.maxHealth) {
+                building.isRepairing = true;
+                this.showToast(`正在维修 ${building.name}`);
+                break;
             }
         }
+    }
+    
+    /**
+     * 命令售卖
+     */
+    orderSell(worldX, worldY) {
+        const gridX = Math.floor(worldX / CONFIG.MAP.TILE_SIZE);
+        const gridY = Math.floor(worldY / CONFIG.MAP.TILE_SIZE);
+        
+        for (let i = this.buildings.length - 1; i >= 0; i--) {
+            const building = this.buildings[i];
+            if (building.containsPoint(gridX, gridY) && 
+                building.playerId === this.playerId && 
+                building.config.canSell) {
+                // 返还部分资金
+                const refund = Math.floor(building.config.cost * CONFIG.ECONOMY.SELL_RATIO);
+                this.economy.earn(refund);
+                
+                // 移除建筑
+                this.buildings.splice(i, 1);
+                this.showToast(`售卖 ${building.name} 获得 $${refund}`);
+                break;
+            }
+        }
+    }
+    
+    /**
+     * 设置缩放
+     */
+    setZoom(zoom) {
+        this.zoom = zoom;
     }
     
     /**
@@ -388,53 +576,6 @@ class Game {
     }
     
     /**
-     * 命令移动
-     */
-    orderMove(targetX, targetY) {
-        for (const unit of this.selectedUnits) {
-            unit.moveTo(targetX, targetY, this.map);
-        }
-    }
-    
-    /**
-     * 命令攻击
-     */
-    orderAttack(gridX, gridY) {
-        // 寻找目标
-        let target = null;
-        
-        // 检查建筑
-        for (const building of this.buildings) {
-            if (building.containsPoint(gridX, gridY) && building.playerId !== this.playerId) {
-                target = building;
-                break;
-            }
-        }
-        
-        // 检查单位
-        if (!target) {
-            for (const unit of this.units) {
-                if (unit.containsPoint(gridX, gridY) && unit.playerId !== this.playerId) {
-                    target = unit;
-                    break;
-                }
-            }
-        }
-        
-        // 命令攻击
-        if (target) {
-            for (const unit of this.selectedUnits) {
-                if (unit.damage > 0) {
-                    unit.attackTarget(target);
-                }
-            }
-        } else {
-            // 如果没有目标，移动
-            this.orderMove(gridX, gridY);
-        }
-    }
-    
-    /**
      * 更新选中面板
      */
     updateSelectionPanel() {
@@ -458,6 +599,7 @@ class Game {
                         <div style="font-weight:bold;">${this.selectedBuilding.name}</div>
                         <div style="font-size:12px;color:#aaa;">
                             生命值: ${Math.floor(this.selectedBuilding.health)}/${this.selectedBuilding.maxHealth}
+                            ${this.selectedBuilding.isRepairing ? ' <span style="color:#0af;">维修中...</span>' : ''}
                         </div>
                     </div>
                 </div>
@@ -466,6 +608,35 @@ class Game {
             // 显示建筑操作按钮
             actions.innerHTML = '';
             
+            // 维修按钮
+            if (this.selectedBuilding.config.canRepair && 
+                this.selectedBuilding.health < this.selectedBuilding.maxHealth) {
+                const repairBtn = document.createElement('button');
+                repairBtn.className = 'action-btn repair';
+                repairBtn.textContent = '🔧 维修';
+                repairBtn.onclick = () => {
+                    this.selectedBuilding.isRepairing = true;
+                    this.showToast('开始维修');
+                };
+                actions.appendChild(repairBtn);
+            }
+            
+            // 售卖按钮
+            if (this.selectedBuilding.config.canSell) {
+                const sellBtn = document.createElement('button');
+                sellBtn.className = 'action-btn sell';
+                const refund = Math.floor(this.selectedBuilding.config.cost * CONFIG.ECONOMY.SELL_RATIO);
+                sellBtn.textContent = `💰 售卖 ($${refund})`;
+                sellBtn.onclick = () => {
+                    this.orderSell(
+                        this.selectedBuilding.x * CONFIG.MAP.TILE_SIZE,
+                        this.selectedBuilding.y * CONFIG.MAP.TILE_SIZE
+                    );
+                    this.clearSelection();
+                };
+                actions.appendChild(sellBtn);
+            }
+            
             // 如果是兵营或战车工厂，显示生产按钮
             if (this.selectedBuilding.type === 'barracks' || this.selectedBuilding.type === 'war_factory') {
                 const unitTypes = this.selectedBuilding.type === 'barracks' 
@@ -473,17 +644,17 @@ class Game {
                     : ['rhino_tank', 'flak_track'];
                 
                 for (const unitType of unitTypes) {
-                    const config = CONFIG.UNITS[unitType];
-                    if (config) {
+                    const unitConfig = CONFIG.UNITS[unitType];
+                    if (unitConfig) {
                         const btn = document.createElement('button');
                         btn.className = 'action-btn';
-                        btn.innerHTML = `${config.icon} ${config.name}<br/>$${config.cost}`;
+                        btn.innerHTML = `${unitConfig.icon} ${unitConfig.name}<br/>$${unitConfig.cost}`;
                         btn.onclick = () => {
-                            if (this.economy.canAfford(config.cost)) {
-                                this.economy.spend(config.cost);
+                            if (this.economy.canAfford(unitConfig.cost)) {
+                                this.economy.spend(unitConfig.cost);
                                 this.selectedBuilding.startProduction(unitType);
                             } else {
-                                alert('资金不足！');
+                                this.showToast('资金不足！');
                             }
                         };
                         actions.appendChild(btn);
@@ -507,23 +678,22 @@ class Game {
             
             actions.innerHTML = '';
             
+            // 停止按钮
+            const stopBtn = document.createElement('button');
+            stopBtn.className = 'action-btn';
+            stopBtn.textContent = '⏹️ 停止';
+            stopBtn.onclick = () => {
+                for (const u of this.selectedUnits) {
+                    u.stop();
+                }
+            };
+            actions.appendChild(stopBtn);
+            
             // 工程师占领按钮
             if (unit.config.canCapture) {
                 const btn = document.createElement('button');
                 btn.className = 'action-btn';
                 btn.textContent = '🏁 占领';
-                btn.onclick = () => {
-                    // 工程师自动寻找附近敌方建筑
-                    for (const building of this.buildings) {
-                        if (building.playerId !== this.playerId) {
-                            const center = building.getCenter();
-                            if (Utils.distance(unit.x, unit.y, center.x, center.y) < 2) {
-                                building.capture(this.playerFaction, this.playerId);
-                                break;
-                            }
-                        }
-                    }
-                };
                 actions.appendChild(btn);
             }
             
@@ -535,10 +705,23 @@ class Game {
                 btn.onclick = () => {
                     const enemyFaction = this.playerFaction === 'soviet' ? 'allied' : 'soviet';
                     unit.disguise(enemyFaction);
+                    this.showToast('已伪装成敌方单位');
                 };
                 actions.appendChild(btn);
             }
         }
+    }
+    
+    /**
+     * 显示Toast提示
+     */
+    showToast(message) {
+        const toast = document.createElement('div');
+        toast.className = 'toast';
+        toast.textContent = message;
+        document.body.appendChild(toast);
+        
+        setTimeout(() => toast.remove(), 2000);
     }
     
     /**
@@ -571,13 +754,19 @@ class Game {
         }
         
         // 检查AI是否被击败
+        let allAIDefeated = true;
         for (const ai of this.aiPlayers) {
             const aiBuildings = this.buildings.filter(b => b.playerId === ai.id);
             const aiConstructionYard = aiBuildings.find(b => b.type === 'construction_yard');
             
-            if (!aiConstructionYard) {
-                this.gameOver(true);
+            if (aiConstructionYard) {
+                allAIDefeated = false;
+                break;
             }
+        }
+        
+        if (allAIDefeated && this.aiPlayers.length > 0) {
+            this.gameOver(true);
         }
     }
     
@@ -605,13 +794,6 @@ class Game {
     }
     
     /**
-     * 暂停/继续
-     */
-    togglePause() {
-        this.isPaused = !this.isPaused;
-    }
-    
-    /**
      * 保存游戏
      */
     saveGame() {
@@ -623,11 +805,14 @@ class Game {
             buildings: this.buildings.map(b => b.serialize()),
             units: this.units.map(u => u.serialize()),
             economy: this.economy.serialize(),
-            camera: this.camera
+            camera: this.camera,
+            zoom: this.zoom,
+            settings: this.settings,
+            timestamp: Date.now()
         };
         
         localStorage.setItem('redAlertSave', JSON.stringify(saveData));
-        alert('游戏已保存！');
+        this.showToast('游戏已保存！');
     }
     
     /**
@@ -636,8 +821,8 @@ class Game {
     loadGame() {
         const saveData = JSON.parse(localStorage.getItem('redAlertSave'));
         if (!saveData) {
-            alert('没有找到存档！');
-            return;
+            this.showToast('没有找到存档！');
+            return false;
         }
         
         this.playerId = saveData.playerId;
@@ -648,6 +833,8 @@ class Game {
         this.units = saveData.units.map(u => Unit.deserialize(u));
         this.economy = Economy.deserialize(saveData.economy);
         this.camera = saveData.camera;
+        this.zoom = saveData.zoom || 1;
+        this.settings = saveData.settings || this.settings;
         
         this.input = new InputHandler(this);
         this.renderer = new Renderer(this.canvas, this);
@@ -655,6 +842,25 @@ class Game {
         this.isRunning = true;
         this.lastTime = performance.now();
         requestAnimationFrame(this.gameLoop.bind(this));
+        
+        this.showToast('游戏已加载！');
+        return true;
+    }
+    
+    /**
+     * 退出游戏
+     */
+    exitGame() {
+        this.isRunning = false;
+        document.getElementById('start-menu').classList.remove('hidden');
+        document.getElementById('game-over').classList.add('hidden');
+    }
+    
+    /**
+     * 暂停/继续
+     */
+    togglePause() {
+        this.isPaused = !this.isPaused;
     }
 }
 

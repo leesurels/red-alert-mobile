@@ -5,8 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <title>红色警戒：共和国之辉 - 移动版</title>
+    <title>红色警戒：共和国之辉 - 移动版 v2.0</title>
     <link rel="stylesheet" href="css/style.css">
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="assets/icon-192x192.png">
+    <meta name="theme-color" content="#e94560">
 </head>
 <body>
     <div id="game-container">
@@ -27,14 +30,20 @@
                 </div>
             </div>
             
+            <!-- 设置按钮 -->
+            <button id="settings-btn">⚙️ 设置</button>
+            
             <!-- 小地图 -->
             <div id="minimap-container">
                 <canvas id="minimap"></canvas>
             </div>
             
+            <!-- 缩放指示器 -->
+            <div id="zoom-indicator">100%</div>
+            
             <!-- 建筑菜单 -->
             <div id="build-menu" class="hidden">
-                <div class="menu-title">建筑</div>
+                <div class="menu-title">建筑 (长按拖动建造)</div>
                 <div class="build-grid" id="build-grid"></div>
             </div>
             
@@ -56,17 +65,20 @@
                 <button id="btn-units" class="control-btn">👥 单位</button>
                 <button id="btn-select" class="control-btn active">✋ 选择</button>
                 <button id="btn-attack" class="control-btn">⚔️ 攻击</button>
+                <button id="btn-repair" class="control-btn">🔧 维修</button>
+                <button id="btn-sell" class="control-btn">💰 售卖</button>
             </div>
         </div>
         
         <!-- 开始菜单 -->
         <div id="start-menu">
             <h1>红色警戒：共和国之辉</h1>
-            <h2>移动版</h2>
+            <h2>移动版 v2.0</h2>
             <div class="menu-buttons">
                 <button id="btn-new-game" class="menu-btn">新游戏</button>
                 <button id="btn-campaign" class="menu-btn">战役模式</button>
                 <button id="btn-skirmish" class="menu-btn">遭遇战</button>
+                <button id="btn-load-game" class="menu-btn">读取存档</button>
             </div>
             <div class="faction-select">
                 <h3>选择阵营</h3>
@@ -85,11 +97,73 @@
             </div>
         </div>
         
+        <!-- 遭遇战设置面板 -->
+        <div id="skirmish-settings" class="hidden">
+            <h2>遭遇战设置</h2>
+            
+            <div class="setting-group">
+                <label>地图类型</label>
+                <select id="map-type">
+                    <option value="GRASSLAND">草原 - 标准地形</option>
+                    <option value="DESERT">沙漠 - 开阔地形</option>
+                    <option value="SNOW">雪地 - 视野受限</option>
+                    <option value="URBAN">城市 - 资源丰富</option>
+                </select>
+            </div>
+            
+            <div class="setting-group">
+                <label>敌人数量: <span id="enemy-count-display">1</span></label>
+                <input type="range" id="enemy-count" min="1" max="5" value="1">
+            </div>
+            
+            <div class="setting-group">
+                <label>难度</label>
+                <select id="difficulty">
+                    <option value="easy">简单</option>
+                    <option value="normal" selected>普通</option>
+                    <option value="hard">困难</option>
+                </select>
+            </div>
+            
+            <div class="setting-group">
+                <button id="btn-start-skirmish" class="menu-btn">开始游戏</button>
+                <button id="btn-back-skirmish" class="menu-btn" style="margin-top:10px;">返回</button>
+            </div>
+        </div>
+        
+        <!-- 设置菜单 -->
+        <div id="settings-menu" class="hidden">
+            <h2>⚙️ 游戏设置</h2>
+            
+            <div class="setting-item">
+                <label>🔊 音效</label>
+                <input type="range" id="sound-volume" min="0" max="100" value="50">
+            </div>
+            
+            <div class="setting-item">
+                <label>🎵 音乐</label>
+                <input type="range" id="music-volume" min="0" max="100" value="50">
+            </div>
+            
+            <div class="setting-item">
+                <label>🌐 语言</label>
+                <select id="language">
+                    <option value="zh">中文</option>
+                    <option value="en">English</option>
+                </select>
+            </div>
+            
+            <button id="btn-save-game" class="setting-btn save">💾 保存游戏</button>
+            <button id="btn-exit-game" class="setting-btn exit">🚪 退出游戏</button>
+            <button id="btn-close-settings" class="setting-btn close">关闭</button>
+        </div>
+        
         <!-- 游戏结束画面 -->
         <div id="game-over" class="hidden">
             <h1 id="game-over-title">游戏结束</h1>
             <p id="game-over-message"></p>
             <button id="btn-restart" class="menu-btn">重新开始</button>
+            <button id="btn-to-menu" class="menu-btn" style="margin-top:10px;">返回主菜单</button>
         </div>
     </div>
     
@@ -106,5 +180,13 @@
     <script src="js/renderer.js"></script>
     <script src="js/game.js"></script>
     <script src="js/main.js"></script>
+    <script>
+        // 注册 Service Worker
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('service-worker.js')
+                .then(reg => console.log('Service Worker 注册成功'))
+                .catch(err => console.log('Service Worker 注册失败', err));
+        }
+    </script>
 </body>
 </html>

@@ -1,4 +1,4 @@
-/* 红色警戒：共和国之辉 - 移动版样式 */
+/* 红色警戒：共和国之辉 - 移动版样式 v2.0 */
 
 * {
     margin: 0;
@@ -71,6 +71,25 @@ body {
     font-size: 18px;
 }
 
+/* 设置按钮 */
+#settings-btn {
+    position: absolute;
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.7);
+    border: 2px solid #444;
+    border-radius: 8px;
+    padding: 8px 15px;
+    color: #fff;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+#settings-btn:active {
+    background: rgba(50, 50, 50, 0.9);
+}
+
 /* 小地图 */
 #minimap-container {
     position: absolute;
@@ -87,6 +106,24 @@ body {
 #minimap {
     width: 100%;
     height: 100%;
+}
+
+/* 缩放指示器 */
+#zoom-indicator {
+    position: absolute;
+    bottom: 80px;
+    right: 10px;
+    background: rgba(0, 0, 0, 0.7);
+    padding: 5px 10px;
+    border-radius: 5px;
+    color: #fff;
+    font-size: 12px;
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+#zoom-indicator.visible {
+    opacity: 1;
 }
 
 /* 建筑菜单 */
@@ -124,12 +161,14 @@ body {
     border-radius: 8px;
     padding: 8px;
     text-align: center;
-    cursor: pointer;
+    cursor: grab;
     transition: all 0.2s;
+    touch-action: none;
 }
 
 .build-item:active, .unit-item:active {
-    transform: scale(0.95);
+    cursor: grabbing;
+    transform: scale(1.05);
 }
 
 .build-item.available {
@@ -157,6 +196,22 @@ body {
     color: #ffd700;
     font-size: 10px;
     display: block;
+}
+
+/* 拖动建造预览 */
+.build-drag-preview {
+    position: fixed;
+    pointer-events: none;
+    opacity: 0.8;
+    z-index: 1000;
+    border: 3px dashed #0f0;
+    background: rgba(0, 255, 0, 0.2);
+    border-radius: 5px;
+}
+
+.build-drag-preview.invalid {
+    border-color: #f00;
+    background: rgba(255, 0, 0, 0.2);
 }
 
 /* 选中单位面板 */
@@ -194,6 +249,16 @@ body {
 
 .action-btn:active {
     background: rgba(100, 100, 100, 0.9);
+}
+
+.action-btn.repair {
+    border-color: #0af;
+    color: #0af;
+}
+
+.action-btn.sell {
+    border-color: #fa0;
+    color: #fa0;
 }
 
 /* 底部控制栏 */
@@ -335,6 +400,156 @@ body {
     font-size: 12px;
 }
 
+/* 遭遇战设置面板 */
+#skirmish-settings {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.95);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 1001;
+}
+
+#skirmish-settings h2 {
+    color: #ffd700;
+    font-size: 24px;
+    margin-bottom: 20px;
+}
+
+.setting-group {
+    margin-bottom: 20px;
+    text-align: center;
+    width: 80%;
+    max-width: 400px;
+}
+
+.setting-group label {
+    color: #fff;
+    display: block;
+    margin-bottom: 10px;
+    font-size: 16px;
+}
+
+.setting-group select,
+.setting-group input[type="range"] {
+    width: 100%;
+    padding: 10px;
+    border-radius: 5px;
+    border: 2px solid #555;
+    background: rgba(50, 50, 50, 0.9);
+    color: #fff;
+    font-size: 16px;
+}
+
+.enemy-count {
+    color: #ffd700;
+    font-size: 24px;
+    font-weight: bold;
+}
+
+/* 设置菜单 */
+#settings-menu {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(0, 0, 0, 0.95);
+    border: 2px solid #666;
+    border-radius: 15px;
+    padding: 20px;
+    width: 90%;
+    max-width: 400px;
+    z-index: 1002;
+}
+
+#settings-menu h2 {
+    color: #ffd700;
+    text-align: center;
+    margin-bottom: 20px;
+    font-size: 20px;
+}
+
+.setting-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 0;
+    border-bottom: 1px solid #333;
+}
+
+.setting-item:last-child {
+    border-bottom: none;
+}
+
+.setting-item label {
+    color: #fff;
+    font-size: 16px;
+}
+
+.setting-item select,
+.setting-item input[type="range"] {
+    padding: 8px;
+    border-radius: 5px;
+    border: 2px solid #555;
+    background: rgba(50, 50, 50, 0.9);
+    color: #fff;
+    font-size: 14px;
+    min-width: 120px;
+}
+
+.setting-btn {
+    width: 100%;
+    padding: 15px;
+    margin-top: 10px;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.setting-btn.save {
+    background: #0af;
+    color: #fff;
+}
+
+.setting-btn.exit {
+    background: #f44;
+    color: #fff;
+}
+
+.setting-btn.close {
+    background: #555;
+    color: #fff;
+}
+
+.setting-btn:active {
+    transform: scale(0.98);
+}
+
+/* 音量滑块 */
+input[type="range"] {
+    -webkit-appearance: none;
+    height: 8px;
+    border-radius: 4px;
+    background: #333;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #e94560;
+    cursor: pointer;
+}
+
 /* 游戏结束画面 */
 #game-over {
     position: absolute;
@@ -395,6 +610,35 @@ body {
     height: 100%;
     background: linear-gradient(90deg, #f00 0%, #0f0 100%);
     transition: width 0.2s;
+}
+
+/* 维修指示器 */
+.repair-indicator {
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    background: rgba(0, 170, 255, 0.3);
+    border: 2px solid #0af;
+    border-radius: 50%;
+    animation: repair-pulse 1s infinite;
+}
+
+@keyframes repair-pulse {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.2); opacity: 0.5; }
+}
+
+/* 售卖指示器 */
+.sell-indicator {
+    position: absolute;
+    font-size: 16px;
+    color: #fa0;
+    animation: sell-bounce 0.5s infinite;
+}
+
+@keyframes sell-bounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-5px); }
 }
 
 /* 等级标识 */
@@ -475,4 +719,42 @@ body {
 
 .build-complete {
     animation: build-complete 0.3s ease-out;
+}
+
+/* 移动命令指示器 */
+.move-command-indicator {
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    border: 2px solid #0f0;
+    border-radius: 50%;
+    animation: move-pulse 0.5s ease-out forwards;
+    pointer-events: none;
+}
+
+@keyframes move-pulse {
+    0% { transform: scale(0.5); opacity: 1; }
+    100% { transform: scale(2); opacity: 0; }
+}
+
+/* Toast 提示 */
+.toast {
+    position: fixed;
+    bottom: 100px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.8);
+    color: #fff;
+    padding: 10px 20px;
+    border-radius: 5px;
+    font-size: 14px;
+    z-index: 2000;
+    animation: toast-fade 2s ease-out forwards;
+}
+
+@keyframes toast-fade {
+    0% { opacity: 0; transform: translate(-50%, 20px); }
+    20% { opacity: 1; transform: translate(-50%, 0); }
+    80% { opacity: 1; }
+    100% { opacity: 0; }
 }

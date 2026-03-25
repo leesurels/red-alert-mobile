@@ -1,10 +1,10 @@
 /**
- * 红色警戒：共和国之辉 - 游戏配置
+ * 红色警戒：共和国之辉 - 游戏配置 v2.0
  */
 
 const CONFIG = {
     // 游戏版本
-    VERSION: '1.0.0',
+    VERSION: '2.0.0',
     
     // 地图配置
     MAP: {
@@ -26,13 +26,15 @@ const CONFIG = {
         STARTING_MONEY: 10000,
         ORE_VALUE: 100,
         ORE_CAPACITY: 1000,
-        HARVESTER_CAPACITY: 500
+        HARVESTER_CAPACITY: 500,
+        SELL_RATIO: 0.5 // 售卖建筑返还50%资金
     },
     
     // 建造配置
     BUILD: {
         POWER_RANGE: 10,  // 建筑必须在已有建筑附近10格内
-        BUILD_SPEED_MULTIPLIER: 1
+        BUILD_SPEED_MULTIPLIER: 1,
+        REPAIR_SPEED: 10 // 每秒修复生命值
     },
     
     // 单位升级配置
@@ -41,6 +43,33 @@ const CONFIG = {
         MAX_SPY_LEVEL: 1,
         XP_PER_KILL: 50,
         LEVEL_THRESHOLDS: [0, 100, 250, 500]
+    },
+    
+    // 采矿车配置
+    HARVESTER: {
+        SPEED: 1.5, // 提高速度
+        AUTO_SEARCH: true // 自动寻矿
+    },
+    
+    // 地图类型
+    MAP_TYPES: {
+        GRASSLAND: { name: '草原', description: '标准地形' },
+        DESERT: { name: '沙漠', description: '开阔地形' },
+        SNOW: { name: '雪地', description: '视野受限' },
+        URBAN: { name: '城市', description: '资源丰富' }
+    },
+    
+    // 语言配置
+    LANGUAGES: {
+        ZH: { name: '中文', code: 'zh' },
+        EN: { name: 'English', code: 'en' }
+    },
+    
+    // 遭遇战配置
+    SKIRMISH: {
+        MIN_ENEMIES: 1,
+        MAX_ENEMIES: 5,
+        DIFFICULTY: ['easy', 'normal', 'hard']
     },
     
     // 阵营配置
@@ -71,7 +100,9 @@ const CONFIG = {
             buildTime: 0,
             size: { w: 3, h: 3 },
             icon: '🏭',
-            description: '基地核心建筑'
+            description: '基地核心建筑',
+            canRepair: false,
+            canSell: false
         },
         power_plant: {
             name: '发电厂',
@@ -81,7 +112,9 @@ const CONFIG = {
             buildTime: 8,
             size: { w: 2, h: 2 },
             icon: '⚡',
-            description: '提供电力'
+            description: '提供电力',
+            canRepair: true,
+            canSell: true
         },
         ore_refinery: {
             name: '矿厂',
@@ -91,7 +124,9 @@ const CONFIG = {
             buildTime: 15,
             size: { w: 3, h: 3 },
             icon: '💎',
-            description: '采集矿石资源'
+            description: '采集矿石资源',
+            canRepair: true,
+            canSell: true
         },
         barracks: {
             name: '兵营',
@@ -101,7 +136,9 @@ const CONFIG = {
             buildTime: 6,
             size: { w: 2, h: 2 },
             icon: '🏠',
-            description: '训练步兵单位'
+            description: '训练步兵单位',
+            canRepair: true,
+            canSell: true
         },
         war_factory: {
             name: '战车工厂',
@@ -111,7 +148,9 @@ const CONFIG = {
             buildTime: 15,
             size: { w: 3, h: 3 },
             icon: '🔧',
-            description: '生产载具单位'
+            description: '生产载具单位',
+            canRepair: true,
+            canSell: true
         },
         radar: {
             name: '雷达',
@@ -122,7 +161,9 @@ const CONFIG = {
             size: { w: 2, h: 2 },
             icon: '📡',
             description: '驱散战争迷雾',
-            revealsFog: true
+            revealsFog: true,
+            canRepair: true,
+            canSell: true
         },
         service_depot: {
             name: '维修厂',
@@ -132,7 +173,9 @@ const CONFIG = {
             buildTime: 8,
             size: { w: 3, h: 2 },
             icon: '🔨',
-            description: '维修载具'
+            description: '维修载具',
+            canRepair: true,
+            canSell: true
         },
         battle_lab: {
             name: '作战实验室',
@@ -142,7 +185,9 @@ const CONFIG = {
             buildTime: 15,
             size: { w: 2, h: 2 },
             icon: '🔬',
-            description: '解锁高级科技'
+            description: '解锁高级科技',
+            canRepair: true,
+            canSell: true
         }
     },
     
@@ -344,7 +389,7 @@ const CONFIG = {
             cost: 1400,
             buildTime: 12,
             health: 800,
-            speed: 0.6,
+            speed: 1.5, // 提高速度
             icon: '⛏️',
             type: 'vehicle',
             canHarvest: true,
@@ -359,7 +404,15 @@ const CONFIG = {
     INPUT: {
         DRAG_THRESHOLD: 10,
         DOUBLE_TAP_DELAY: 300,
-        LONG_PRESS_DELAY: 500
+        LONG_PRESS_DELAY: 500, // 长按延迟
+        PINCH_THRESHOLD: 10 // 双指缩放阈值
+    },
+    
+    // 缩放限制
+    ZOOM: {
+        MIN: 0.5,
+        MAX: 2.0,
+        DEFAULT: 1.0
     }
 };
 
