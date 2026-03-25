@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <title>红色警戒：共和国之辉 - 移动版</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div id="game-container">
+        <!-- 游戏画布 -->
+        <canvas id="gameCanvas"></canvas>
+        
+        <!-- UI 层 -->
+        <div id="ui-layer">
+            <!-- 资源显示 -->
+            <div id="resource-panel">
+                <div class="resource-item">
+                    <span class="resource-icon">💰</span>
+                    <span id="money">10000</span>
+                </div>
+                <div class="resource-item">
+                    <span class="resource-icon">⚡</span>
+                    <span id="power">100</span>/<span id="power-max">100</span>
+                </div>
+            </div>
+            
+            <!-- 小地图 -->
+            <div id="minimap-container">
+                <canvas id="minimap"></canvas>
+            </div>
+            
+            <!-- 建筑菜单 -->
+            <div id="build-menu" class="hidden">
+                <div class="menu-title">建筑</div>
+                <div class="build-grid" id="build-grid"></div>
+            </div>
+            
+            <!-- 单位菜单 -->
+            <div id="unit-menu" class="hidden">
+                <div class="menu-title">训练</div>
+                <div class="unit-grid" id="unit-grid"></div>
+            </div>
+            
+            <!-- 选中单位信息 -->
+            <div id="selection-panel" class="hidden">
+                <div id="selection-info"></div>
+                <div id="action-buttons"></div>
+            </div>
+            
+            <!-- 底部控制栏 -->
+            <div id="control-bar">
+                <button id="btn-build" class="control-btn">🏗️ 建筑</button>
+                <button id="btn-units" class="control-btn">👥 单位</button>
+                <button id="btn-select" class="control-btn active">✋ 选择</button>
+                <button id="btn-attack" class="control-btn">⚔️ 攻击</button>
+            </div>
+        </div>
+        
+        <!-- 开始菜单 -->
+        <div id="start-menu">
+            <h1>红色警戒：共和国之辉</h1>
+            <h2>移动版</h2>
+            <div class="menu-buttons">
+                <button id="btn-new-game" class="menu-btn">新游戏</button>
+                <button id="btn-campaign" class="menu-btn">战役模式</button>
+                <button id="btn-skirmish" class="menu-btn">遭遇战</button>
+            </div>
+            <div class="faction-select">
+                <h3>选择阵营</h3>
+                <div class="factions">
+                    <div class="faction-card selected" data-faction="soviet">
+                        <div class="faction-icon">🔴</div>
+                        <div class="faction-name">苏联</div>
+                        <div class="faction-desc">重装甲、强力单位</div>
+                    </div>
+                    <div class="faction-card" data-faction="allied">
+                        <div class="faction-icon">🔵</div>
+                        <div class="faction-name">盟军</div>
+                        <div class="faction-desc">高科技、空军优势</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 游戏结束画面 -->
+        <div id="game-over" class="hidden">
+            <h1 id="game-over-title">游戏结束</h1>
+            <p id="game-over-message"></p>
+            <button id="btn-restart" class="menu-btn">重新开始</button>
+        </div>
+    </div>
+    
+    <!-- 游戏脚本 -->
+    <script src="js/config.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/map.js"></script>
+    <script src="js/fog.js"></script>
+    <script src="js/building.js"></script>
+    <script src="js/unit.js"></script>
+    <script src="js/economy.js"></script>
+    <script src="js/ai.js"></script>
+    <script src="js/input.js"></script>
+    <script src="js/renderer.js"></script>
+    <script src="js/game.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html>

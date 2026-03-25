@@ -1,0 +1,62 @@
+<?xml version='1.0' encoding='utf-8'?>
+<widget id="com.redalert.mobile" version="1.0.0" xmlns="http://www.w3.org/ns/widgets" xmlns:cdv="http://cordova.apache.org/ns/1.0">
+    <name>红色警戒：共和国之辉</name>
+    <description>
+        红色警戒：共和国之辉 - 移动版。经典即时战略游戏移动端复刻。
+    </description>
+    <author email="dev@redalert.com" href="https://redalert.com">
+        Red Alert Mobile Team
+    </author>
+    <content src="index.html" />
+    <access origin="*" />
+    <allow-intent href="http://*/*" />
+    <allow-intent href="https://*/*" />
+    <allow-intent href="tel:*" />
+    <allow-intent href="sms:*" />
+    <allow-intent href="mailto:*" />
+    <allow-intent href="geo:*" />
+    
+    <!-- Android 配置 -->
+    <platform name="android">
+        <allow-intent href="market:*" />
+        
+        <!-- 图标 -->
+        <icon src="assets/icon-36x36.png" density="ldpi" />
+        <icon src="assets/icon-48x48.png" density="mdpi" />
+        <icon src="assets/icon-72x72.png" density="hdpi" />
+        <icon src="assets/icon-96x96.png" density="xhdpi" />
+        <icon src="assets/icon-144x144.png" density="xxhdpi" />
+        <icon src="assets/icon-192x192.png" density="xxxhdpi" />
+        
+        <!-- 启动图 -->
+        <splash src="assets/splash-land-hdpi.png" density="land-hdpi" />
+        <splash src="assets/splash-land-ldpi.png" density="land-ldpi" />
+        <splash src="assets/splash-land-mdpi.png" density="land-mdpi" />
+        <splash src="assets/splash-land-xhdpi.png" density="land-xhdpi" />
+        <splash src="assets/splash-port-hdpi.png" density="port-hdpi" />
+        <splash src="assets/splash-port-ldpi.png" density="port-ldpi" />
+        <splash src="assets/splash-port-mdpi.png" density="port-mdpi" />
+        <splash src="assets/splash-port-xhdpi.png" density="port-xhdpi" />
+        
+        <!-- 偏好设置 -->
+        <preference name="Orientation" value="landscape" />
+        <preference name="Fullscreen" value="true" />
+        <preference name="KeepRunning" value="true" />
+        <preference name="SplashScreenDelay" value="3000" />
+        <preference name="FadeSplashScreenDuration" value="500" />
+        <preference name="ShowSplashScreenSpinner" value="false" />
+        <preference name="android-minSdkVersion" value="22" />
+        <preference name="android-targetSdkVersion" value="33" />
+        <preference name="AndroidPersistentFileLocation" value="Compatibility" />
+    </platform>
+    
+    <!-- 插件 -->
+    <plugin name="cordova-plugin-whitelist" spec="^1.3.4" />
+    <plugin name="cordova-plugin-statusbar" spec="^3.0.0" />
+    <plugin name="cordova-plugin-fullscreen" spec="^1.3.0" />
+    
+    <!-- 特性 -->
+    <feature name="StatusBar">
+        <param name="ios-package" value="CDVStatusBar" onload="true" />
+    </feature>
+</widget>
