@@ -3,12 +3,7 @@ name: Build Android APK
 on:
   push:
     branches: [ main, master ]
-  pull_request:
-    branches: [ main, master ]
   workflow_dispatch:
-
-env:
-  ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: true
 
 jobs:
   build:
@@ -22,7 +17,6 @@ jobs:
       uses: actions/setup-node@v4
       with:
         node-version: '20'
-        cache: 'npm'
     
     - name: Set up JDK
       uses: actions/setup-java@v4
@@ -30,15 +24,27 @@ jobs:
         java-version: '17'
         distribution: 'temurin'
     
+    - name: Setup Android SDK
+      uses: android-actions/setup-android@v3
+    
     - name: Install dependencies
       run: |
-        npm ci
+        npm install
         npm install @capacitor/core @capacitor/cli @capacitor/android
     
     - name: Build web assets
       run: |
         mkdir -p www
-        cp -r *.html *.json *.js css js assets www/ 2>/dev/null || true
+        cp index.html www/
+        cp manifest.json www/
+        cp service-worker.js www/
+        cp -r css www/
+        cp -r js www/
+        cp -r assets www/
+    
+    - name: Initialize Capacitor
+      run: |
+        npx cap init "Red Alert" com.redalert.mobile --web-dir www
     
     - name: Add Android platform
       run: npx cap add android
@@ -46,13 +52,11 @@ jobs:
     - name: Sync Capacitor
       run: npx cap sync android
     
-    - name: Grant execute permission for gradlew
-      run: chmod +x android/gradlew
-    
     - name: Build APK
+      working-directory: android
       run: |
-        cd android
-        ./gradlew assembleDebug
+        chmod +x gradlew
+        ./gradlew assembleDebug --no-daemon
     
     - name: Upload APK
       uses: actions/upload-artifact@v4
@@ -60,18 +64,3 @@ jobs:
         name: red-alert-apk
         path: android/app/build/outputs/apk/debug/app-debug.apk
         retention-days: 30
-    
-    - name: Create Release
-      if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-      uses: softprops/action-gh-release@v2
-      with:
-        files: android/app/build/outputs/apk/debug/app-debug.apk
-        tag_name: v${{ github.run_number }}
-        name: Release v${{ github.run_number }}
-        body: |
-          红色警戒：共和国之辉 - 移动版
-          
-          构建时间: ${{ github.event.head_commit.timestamp }}
-          提交: ${{ github.event.head_commit.message }}
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
