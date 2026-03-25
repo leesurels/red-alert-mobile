@@ -16,7 +16,7 @@ jobs:
     - name: Set up Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: '20'
+        node-version: '22'
     
     - name: Set up JDK
       uses: actions/setup-java@v4
@@ -64,3 +64,18 @@ jobs:
         name: red-alert-apk
         path: android/app/build/outputs/apk/debug/app-debug.apk
         retention-days: 30
+    
+    - name: Create Release
+      if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+      uses: softprops/action-gh-release@v2
+      with:
+        files: android/app/build/outputs/apk/debug/app-debug.apk
+        tag_name: v${{ github.run_number }}
+        name: Release v${{ github.run_number }}
+        body: |
+          红色警戒：共和国之辉 - 移动版
+          
+          构建时间: ${{ github.event.head_commit.timestamp }}
+          提交: ${{ github.event.head_commit.message }}
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
